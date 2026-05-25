@@ -1,0 +1,12 @@
+numpy>=1.24
+pandas>=2.0
+opencv-contrib-python>=4.8
+pillow>=10.0
+scikit-image>=0.22
+matplotlib>=3.7
+seaborn>=0.13
+torch>=2.1
+torchvision>=0.16
+huggingface-hub>=0.24
+# SAM3 (install from source; gated weights require `huggingface-cli login`):
+#   pip install 'git+https://github.com/facebookresearch/sam3.git'

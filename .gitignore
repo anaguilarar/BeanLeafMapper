@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+*.ipynb
+
+# Project data (kept out of git: research data + large generated artefacts)
+photos_iaf_*/
+outputs/
+outputs_*/
+*.log
+
+# Reference / one-off artefacts not meant for the repo
+Aruco_Marker_*.png
+
+# Tooling / IDE local state
+.claude/
+.idea/
+.vscode/
+*.swp
+*.swo
+skills-lock.json
+
+# OS junk
+.DS_Store
+Thumbs.db
