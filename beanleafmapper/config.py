@@ -60,7 +60,14 @@ class ModelConfig:
 class PipelineConfig:
     photos_dir: Path = DEFAULT_PHOTOS_DIR
     output_dir: Path = DEFAULT_OUTPUT_DIR
-    aruco: ArucoConfig = field(default_factory=ArucoConfig)
-    grid: GridConfig = field(default_factory=GridConfig)
-    detection: DetectionConfig = field(default_factory=DetectionConfig)
-    model: ModelConfig = field(default_factory=ModelConfig)
+    ARUCO: ArucoConfig = field(default_factory=ArucoConfig)
+    GRID: GridConfig = field(default_factory=GridConfig)
+    DETECTION: DetectionConfig = field(default_factory=DetectionConfig)
+    MODEL: ModelConfig = field(default_factory=ModelConfig)
+
+    model_config = {
+        # Forbid extra keys in the YAML so typos are caught immediately.
+        "extra": "forbid",
+        # Allow `date` strings to be parsed automatically.
+        "str_strip_whitespace": True,
+    }

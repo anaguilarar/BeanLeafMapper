@@ -90,12 +90,11 @@ class Sam3Model:
         return Sam3Inference.from_state(state)
 
 
-def build_detector(cfg: "ModelConfig", confidence_threshold: float) -> "Sam3Model":
+def build_detector(cfg, confidence_threshold: float) -> "Sam3Model":
     """Construct the configured text-promptable detector.
 
     Today only `backend="sam3_image"` is implemented; other backends are listed in
     README and will raise NotImplementedError until wired in."""
-    from .config import ModelConfig as _MC  # noqa: F401  (typing only)
 
     if cfg.backend == "sam3_image":
         return Sam3Model(
