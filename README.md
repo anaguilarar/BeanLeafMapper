@@ -1,7 +1,6 @@
 # BeanLeafMapper
 
 SAM3-based leaf detection and leaf-area estimation for bean crops.
-Converted from `Untitled35.ipynb` into a structured Python project.
 
 ## What it does
 
