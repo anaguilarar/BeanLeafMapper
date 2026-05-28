@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 
 from ..calibration import ArucoCalibrator, GridCalibrator, TemplateMatchingCalibrator
-from ..config import PipelineConfig
 from ..detector import LeavesDetector
 from ..io_utils import ImageId, list_photos, load_rgb
 from ..model import Sam3Model, build_detector
@@ -26,11 +25,11 @@ def process_lab_image(
     model: Sam3Model,
     aruco_cal: ArucoCalibrator,
     grid_cal: GridCalibrator,
-    cfg: PipelineConfig,
+    cfg,
     template_cal: TemplateMatchingCalibrator | None = None,
 ) -> pd.DataFrame:
     """Process one lab photo. Returns a DataFrame with one row per detected leaf."""
-    image = load_rgb(image_id.path, downscale=cfg.detection.image_downscale)
+    image = load_rgb(image_id.path, downscale=cfg.DETECTION.image_downscale)
     image_np = np.array(image)
 
     aruco_scale = aruco_cal.calibrate(image_np)
@@ -49,8 +48,8 @@ def process_lab_image(
 
     inference = model.detect(
         image,
-        text_prompt=cfg.detection.leaf_prompt,
-        confidence_threshold=cfg.detection.leaf_confidence,
+        text_prompt=cfg.DETECTION.leaf_prompt,
+        confidence_threshold=cfg.DETECTION.leaf_confidence,
     )
     leaves = LeavesDetector()
     leaves.set_sam3results(inference)
@@ -82,7 +81,7 @@ def process_lab_image(
         )
     df = pd.DataFrame(rows)
 
-    out_dir = Path(cfg.output_dir) / "lab"
+    out_dir = Path(cfg.GENERAL_INFO.output_dir) / "lab"
     out_dir.mkdir(parents=True, exist_ok=True)
     annotated = leaves.annotate_image(image_np)
     save_annotated(annotated, out_dir / f"{image_id.stem}_leaves.png", title=image_id.stem)
@@ -90,27 +89,27 @@ def process_lab_image(
     return df
 
 
-def process_lab_directory(cfg: PipelineConfig, model: Sam3Model | None = None) -> pd.DataFrame:
-    model = model or build_detector(cfg.model, cfg.detection.leaf_confidence)
+def process_lab_directory(cfg, model: Sam3Model | None = None) -> pd.DataFrame:
+    model = model or build_detector(cfg.MODEL, cfg.DETECTION.leaf_confidence)
     aruco_cal = ArucoCalibrator(
-        marker_size_cm=cfg.aruco.marker_size_cm,
-        dictionary=cfg.aruco.dictionary,
+        marker_size_cm=cfg.ARUCO.marker_size_cm,
+        dictionary=cfg.ARUCO.dictionary,
     )
     template_cal = TemplateMatchingCalibrator(
-        marker_size_cm=cfg.aruco.marker_size_cm,
-        dictionary=cfg.aruco.dictionary,
+        marker_size_cm=cfg.ARUCO.marker_size_cm,
+        dictionary=cfg.ARUCO.dictionary,
     )
-    grid_cal = GridCalibrator(square_size_cm=cfg.grid.square_size_cm)
+    grid_cal = GridCalibrator(square_size_cm=cfg.LAB_GRID.square_size_cm)
 
     frames: list[pd.DataFrame] = []
-    for image_id in list_photos(cfg.photos_dir, kind="lab"):
+    for image_id in list_photos(cfg.GENERAL_INFO.photos_dir, kind="lab"):
         try:
             df = process_lab_image(image_id, model, aruco_cal, grid_cal, cfg, template_cal)
         except Exception as exc:  # noqa: BLE001
             df = _empty_with_warning(image_id, reason=f"error:{type(exc).__name__}:{exc}")
         frames.append(df)
     combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-    out_csv = Path(cfg.output_dir) / "lab" / "all_leaves.csv"
+    out_csv = Path(cfg.GENERAL_INFO.output_dir) / "lab" / "all_leaves.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(out_csv, index=False)
 

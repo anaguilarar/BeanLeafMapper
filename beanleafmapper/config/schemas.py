@@ -17,6 +17,7 @@ class GeneralInfoConfig(BaseModel):
     """General information about settings"""
     photos_dir: Annotated[Path,  Field(description = 'input path')]
     output_dir: Annotated[Path,  Field(description = 'ouput path')]
+    cultivar: str = Field(default= None, description= 'bean cultivar name')
     
 
 class DetectionConfig(BaseModel):

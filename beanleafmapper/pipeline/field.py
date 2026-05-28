@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 
 from ..calibration import ArucoCalibrator, TemplateMatchingCalibrator
-from ..config import PipelineConfig
 from ..detector import LeavesDetector
 from ..io_utils import ImageId, list_photos, load_rgb
 from ..model import Sam3Model, build_detector
@@ -19,11 +18,11 @@ def process_field_image(
     image_id: ImageId,
     model: Sam3Model,
     calibrator: ArucoCalibrator,
-    cfg: PipelineConfig,
+    cfg,
     template_calibrator: TemplateMatchingCalibrator | None = None,
 ) -> pd.DataFrame:
     """Process one field photo. Returns a DataFrame of per-leaf metrics (may be empty)."""
-    image = load_rgb(image_id.path, downscale=cfg.detection.image_downscale)
+    image = load_rgb(image_id.path, downscale=cfg.DETECTION.image_downscale)
     image_np = np.array(image)
 
     scale = calibrator.calibrate(image_np)
@@ -34,8 +33,8 @@ def process_field_image(
 
     inference = model.detect(
         image,
-        text_prompt=cfg.detection.leaf_prompt,
-        confidence_threshold=cfg.detection.leaf_confidence,
+        text_prompt=cfg.DETECTION.leaf_prompt,
+        confidence_threshold=cfg.DETECTION.leaf_confidence,
     )
 
     leaves = LeavesDetector()
@@ -46,16 +45,16 @@ def process_field_image(
     main_plant = leaves.main_plant_metrics(
         image_shape=image_np.shape,
         pixel_scale=scale,
-        max_distance_cm=cfg.detection.main_plant_max_distance_cm,
-        cluster_eps_cm=cfg.detection.main_plant_cluster_eps_cm,
-        cluster_min_samples=cfg.detection.main_plant_cluster_min_samples,
+        max_distance_cm=cfg.DETECTION.main_plant_max_distance_cm,
+        cluster_eps_cm=cfg.DETECTION.main_plant_cluster_eps_cm,
+        cluster_min_samples=cfg.DETECTION.main_plant_cluster_min_samples,
     )
     main_plant = leaves.filter_by_area_quantile(
-        main_plant, quantile=cfg.detection.min_area_quantile
+        main_plant, quantile=cfg.DETECTION.min_area_quantile
     )
     main_plant = _attach_image_metadata(main_plant, image_id, scale_cm_per_px=scale.cm_per_px)
 
-    out_dir = Path(cfg.output_dir) / "field"
+    out_dir = Path(cfg.GENERAL_INFO.output_dir) / "field"
     out_dir.mkdir(parents=True, exist_ok=True)
     annotated = leaves.annotate_image(image_np, leaf_ids=main_plant["leaf_id"].tolist())
     save_annotated(annotated, out_dir / f"{image_id.stem}_leaves.png", title=image_id.stem)
@@ -64,26 +63,26 @@ def process_field_image(
     return main_plant
 
 
-def process_field_directory(cfg: PipelineConfig, model: Sam3Model | None = None) -> pd.DataFrame:
+def process_field_directory(cfg, model: Sam3Model | None = None) -> pd.DataFrame:
     """Process every field image in cfg.photos_dir, return a concatenated DataFrame."""
-    model = model or build_detector(cfg.model, cfg.detection.leaf_confidence)
+    model = model or build_detector(cfg.MODEL, cfg.DETECTION.leaf_confidence)
     calibrator = ArucoCalibrator(
-        marker_size_cm=cfg.aruco.marker_size_cm,
-        dictionary=cfg.aruco.dictionary,
+        marker_size_cm=cfg.ARUCO.marker_size_cm,
+        dictionary=cfg.ARUCO.dictionary,
     )
     template_calibrator = TemplateMatchingCalibrator(
-        marker_size_cm=cfg.aruco.marker_size_cm,
-        dictionary=cfg.aruco.dictionary,
+        marker_size_cm=cfg.ARUCO.marker_size_cm,
+        dictionary=cfg.ARUCO.dictionary,
     )
     frames: list[pd.DataFrame] = []
-    for image_id in list_photos(cfg.photos_dir, kind="field"):
+    for image_id in list_photos(cfg.GENERAL_INFO.photos_dir, kind="field"):
         try:
             df = process_field_image(image_id, model, calibrator, cfg, template_calibrator)
         except Exception as exc:  # noqa: BLE001 - we want to keep going
             df = _empty_with_warning(image_id, reason=f"error:{type(exc).__name__}:{exc}")
         frames.append(df)
     combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-    out_csv = Path(cfg.output_dir) / "field" / "all_leaves.csv"
+    out_csv = Path(cfg.GENERAL_INFO.output_dir) / "field" / "all_leaves.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(out_csv, index=False)
     return combined

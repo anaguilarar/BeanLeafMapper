@@ -13,7 +13,7 @@ DETECTION:
   leaf_prompt: "leaf"
   leaf_confidence: 0.50
   image_downscale: 4
-  main_plant_cluster_eps_cm: 8.0
+  main_plant_cluster_eps_cm: 7.5
   main_plant_cluster_min_samples: 3
   main_plant_max_distance_cm: 30.0
   min_area_quantile: 0.75
